@@ -1,0 +1,36 @@
+%pyspark 
+
+
+def converter(dep_date):
+	if dep_date is None:
+		return None
+	else:
+		year= dep_date[-4:]
+		date= dep_date[8:10]
+		month_temp=dep_date[4:7]
+		month_list=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+		month=''
+        
+		if month_temp in month_list:
+			if (month_list.index(month_temp)+1)>=10:
+				month= month+ str(month_list.index(month_temp)+1)
+			else:
+				month=month+ '0'+ str(month_list.index(month_temp)+1)
+		else:
+			pass
+            
+		return year +'-'+ month +'-'+ date
+
+
+converter_UDF=udf(converter, StringType())
+
+parsed_data = sqlContext.read.parquet("s3://ewequbole/marketing/defloc/affine/expedia_pasrse_05_2016/2015/08/01/00/part-r-00001-10068ffc-d150-4a63-8bfd-5fd2eb9fba5e.gz.parquet")
+#parsed_data.show()
+#date_df = parsed_data.select("flight_search_departure_date")
+
+#date_df.withColumn("dept_date", converter_UDF(date_df.flight_search_departure_date)).show(1000, truncate = False)
+
+data = parsed_data.select("guid").withColumn("new_guid", upper(replaceForeignUDF(parsed_data.guid)))
+#data2 = data.select("new_guid")
+data1 = data.select(data.new_guid.alias('guid_n'))
+data1.show(truncate = False)
